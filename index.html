@@ -297,7 +297,7 @@
   <!-- ============ ШАГ 1. ДАННЫЕ КЛИЕНТА ============ -->
   <section class="page" id="p0" data-step="0">
     <div class="card">
-      <div class="step-title">Данные клиента <span class="step-num">ШАГ 1 ИЗ 7</span></div>
+      <div class="step-title">Данные клиента <span class="step-num">ШАГ 1 ИЗ 8</span></div>
       <div class="row">
         <div class="field"><label>ФИО заказчика</label><input type="text" id="clientFio" placeholder="Иванов Иван Иванович"></div>
         <div class="field"><label>Телефон</label><input type="tel" id="clientPhone" placeholder="+7 (900) 000-00-00"></div>
@@ -312,7 +312,7 @@
   <!-- ============ ШАГ 2. ПОЛ ============ -->
   <section class="page" id="p1" data-step="1">
     <div class="card">
-      <div class="step-title">Размеры по полу <span class="step-num" id="stepLabel1">ШАГ 2 ИЗ 7</span></div>
+      <div class="step-title">Размеры по полу <span class="step-num" id="stepLabel1">ШАГ 2 ИЗ 8</span></div>
       <div class="row">
         <div class="field" style="flex:100%">
           <label class="sw" for="includeFloor" id="swFloor"><input type="checkbox" id="includeFloor" checked> Плитка на полу учитывается в расчёте</label>
@@ -332,7 +332,7 @@
   <!-- ============ ШАГ 3. СТЕНЫ ============ -->
   <section class="page" id="p2" data-step="2">
     <div class="card">
-      <div class="step-title">Стены и проёмы <span class="step-num">ШАГ 3 ИЗ 7</span></div>
+      <div class="step-title">Стены и проёмы <span class="step-num">ШАГ 3 ИЗ 8</span></div>
       <div class="row">
         <div class="field" style="flex:100%">
           <label class="sw" for="includeWalls"><input type="checkbox" id="includeWalls" checked> Плитка на стенах учитывается в расчёте</label>
@@ -357,10 +357,10 @@
     </div>
   </section>
 
-  <!-- ============ ШАГ 4. ПЛИТКА И КЛЕЙ ============ -->
+  <!-- ============ ШАГ 4. ПЛИТКА ДЛЯ ПОЛА ============ -->
   <section class="page" id="p3" data-step="3">
     <div class="card">
-      <div class="step-title">Плитка, швы и клей <span class="step-num">ШАГ 4 ИЗ 7</span></div>
+      <div class="step-title">Плитка для пола <span class="step-num">ШАГ 4 ИЗ 8</span></div>
       <div class="row">
         <div class="field"><label>Ширина плитки, см</label><input type="number" id="tileW" value="60" min="1" step="0.1"></div>
         <div class="field"><label>Длина плитки, см</label><input type="number" id="tileL" value="60" min="1" step="0.1"></div>
@@ -385,10 +385,38 @@
     </div>
   </section>
 
-  <!-- ============ ШАГ 5. ГИДРОИЗОЛЯЦИЯ И ГРУНТОВКА ============ -->
-  <section class="page" id="p4" data-step="4">
+  <!-- ============ ШАГ 5. ПЛИТКА ДЛЯ СТЕН ============ -->
+  <section class="page" id="p3b" data-step="4">
     <div class="card">
-      <div class="step-title">Гидроизоляция и грунтовка <span class="step-num">ШАГ 5 ИЗ 7</span></div>
+      <div class="step-title">Плитка для стен <span class="step-num">ШАГ 5 ИЗ 8</span></div>
+      <div class="row">
+        <div class="field"><label>Ширина плитки, см</label><input type="number" id="wallTileW" value="30" min="1" step="0.1"></div>
+        <div class="field"><label>Длина плитки, см</label><input type="number" id="wallTileL" value="60" min="1" step="0.1"></div>
+        <div class="field"><label>Толщина, мм</label><input type="number" id="wallTileThk" value="9" min="1" step="0.1"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Шов между плитками, мм</label><input type="number" id="wallSeam" value="2" min="0" step="0.1"></div>
+        <div class="field"><label>СВП, шт/м²</label><input type="number" id="wallSvpRate" value="6" min="0" step="1"></div>
+        <div class="field"><label>Расход клея</label>
+          <select id="wallGlueMode">
+            <option value="trowel">По зубцу шпателя</option>
+            <option value="manual">Вручную, кг/м²</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field" id="wallTrowelWrap"><label>Зубец шпателя, мм</label><input type="number" id="wallTrowel" value="8" min="1" step="0.5"></div>
+        <div class="field" id="wallGlueManualWrap" style="display:none"><label>Клей, кг/м²</label><input type="number" id="wallGlueManual" value="5" min="0" step="0.1"></div>
+        <div class="field"><label>Мешок клея, кг</label><input type="number" id="wallBagWeight" value="25" min="1" step="1"></div>
+      </div>
+      <div class="row"><div class="field"><span class="hint" id="wallGlueHint"></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============ ШАГ 6. ГИДРОИЗОЛЯЦИЯ И ГРУНТОВКА ============ -->
+  <section class="page" id="p4" data-step="5">
+    <div class="card">
+      <div class="step-title">Гидроизоляция и грунтовка <span class="step-num">ШАГ 6 ИЗ 8</span></div>
       <div class="row">
         <div class="field"><label>Гидроизоляция, ₽/м²</label><input type="number" id="hydroPrice" value="500" min="0" step="50"></div>
         <div class="field"><label>Грунтовка, ₽/м²</label><input type="number" id="primerPrice" value="300" min="0" step="50"></div>
@@ -406,7 +434,7 @@
   <!-- ============ ШАГ 6. РАБОТЫ И ИЗДЕЛИЯ ============ -->
   <section class="page" id="p5" data-step="5">
     <div class="card">
-      <div class="step-title">Работы и изделия <span class="step-num">ШАГ 6 ИЗ 7</span></div>
+      <div class="step-title">Работы и изделия <span class="step-num">ШАГ 7 ИЗ 8</span></div>
       <div class="row">
         <div class="field"><label>Укладка плитки, ₽/м²</label><input type="number" id="priceTile" value="3500" min="0" step="50"></div>
         <div class="field"><label>Затирка швов</label>
@@ -503,6 +531,8 @@
     "doorCount","doorW","doorH","winCount","winW","winH",
     "tileW","tileL","tileThk","seam","svpRate",
     "glueMode","trowel","glueManual","bagWeight",
+    "wallTileW","wallTileL","wallTileThk","wallSeam","wallSvpRate",
+    "wallGlueMode","wallTrowel","wallGlueManual","wallBagWeight",
     "hydroPrice","primerPrice","hydroCons","hydroBucket","primerCons","primerCan",
     "priceTile","groutType","epoxyPrice","miterLm","miterPrice",
     "holesQty","holesPrice","shelfQty","shelfPrice","slopeLm","slopePrice",
@@ -558,6 +588,8 @@
     "doorCount","doorW","doorH","winCount","winW","winH",
     "tileW","tileL","tileThk","seam","svpRate",
     "glueMode","trowel","glueManual","bagWeight",
+    "wallTileW","wallTileL","wallTileThk","wallSeam","wallSvpRate",
+    "wallGlueMode","wallTrowel","wallGlueManual","wallBagWeight",
     "hydroPrice","primerPrice","hydroCons","hydroBucket","primerCons","primerCan",
     "priceTile","groutType","epoxyPrice","miterLm","miterPrice",
     "holesQty","holesPrice","shelfQty","shelfPrice","slopeLm","slopePrice",
@@ -570,6 +602,7 @@
   var out = {
     floorHint: $("floorHint"), wallHint: $("wallHint"), glueHint: $("glueHint"),
     glueManualWrap: $("glueManualWrap"), trowelWrap: $("trowelWrap"),
+    wallGlueHint: $("wallGlueHint"), wallGlueManualWrap: $("wallGlueManualWrap"), wallTrowelWrap: $("wallTrowelWrap"),
     sheetBody: $("sheetBody"), sheetDate: $("sheetDate")
   };
 
@@ -593,32 +626,45 @@
     var winArea = e.includeWalls.checked ? num(e.winCount) * num(e.winW) * num(e.winH) : 0;
     var wallArea = Math.max(0, wallGross - doorArea - winArea);
 
-    var tileW = num(e.tileW), tileL = num(e.tileL), thk = num(e.tileThk);
-    var seam = num(e.seam), reserve = num(e.reserve), svpRate = Math.round(num(e.svpRate));
-    var bagWeight = num(e.bagWeight, 25) || 25;
-    var tileArea = (tileW / 100) * (tileL / 100);
-    var coef = 1 + reserve / 100;
+    var reserve = num(e.reserve), coef = 1 + reserve / 100;
 
+    // плитка для пола
+    var tileW = num(e.tileW), tileL = num(e.tileL), thk = num(e.tileThk);
+    var seam = num(e.seam), svpRate = Math.round(num(e.svpRate));
+    var bagWeight = num(e.bagWeight, 25) || 25;
     var trowel = num(e.trowel);
     var manual = e.glueMode.value === "manual";
     out.glueManualWrap.style.display = manual ? "block" : "none";
     out.trowelWrap.style.display = manual ? "none" : "block";
     var glueRate = manual ? num(e.glueManual) : adhesiveRate(trowel);
 
-    function surface(area) {
+    // плитка для стен
+    var wTileW = num(e.wallTileW), wTileL = num(e.wallTileL), wThk = num(e.wallTileThk);
+    var wSeam = num(e.wallSeam), wSvpRate = Math.round(num(e.wallSvpRate));
+    var wBagWeight = num(e.wallBagWeight, 25) || 25;
+    var wTrowel = num(e.wallTrowel);
+    var wManual = e.wallGlueMode.value === "manual";
+    out.wallGlueManualWrap.style.display = wManual ? "block" : "none";
+    out.wallTrowelWrap.style.display = wManual ? "none" : "block";
+    var wGlueRate = wManual ? num(e.wallGlueManual) : adhesiveRate(wTrowel);
+
+    function surface(area, tw, tl, seamMm, thkMm, svpR, gRate, bWeight) {
+      var tileArea = (tw / 100) * (tl / 100);
       var areaR = area * coef;
+      var glue = areaR * gRate;
       return {
         area: area,
         areaR: areaR,
         tiles: tileArea > 0 ? Math.ceil(areaR / tileArea) : 0,
-        glue: areaR * glueRate,
-        svp: Math.ceil(areaR * svpRate),
-        jl: jointLength(area, tileW, tileL),
-        grout: groutMass(area, tileW, tileL, seam, thk)
+        glue: glue,
+        bags: bWeight > 0 ? Math.ceil(glue / bWeight) : 0,
+        svp: Math.ceil(areaR * svpR),
+        jl: jointLength(area, tw, tl),
+        grout: groutMass(area, tw, tl, seamMm, thkMm)
       };
     }
-    var F = surface(floorArea);
-    var W = surface(wallArea);
+    var F = surface(floorArea, tileW, tileL, seam, thk, svpRate, glueRate, bagWeight);
+    var W = surface(wallArea, wTileW, wTileL, wSeam, wThk, wSvpRate, wGlueRate, wBagWeight);
     var T = {
       area: F.area + W.area,
       areaR: F.areaR + W.areaR,
@@ -628,7 +674,7 @@
       jl: F.jl + W.jl,
       grout: F.grout + W.grout
     };
-    var totalBags = bagWeight > 0 ? Math.ceil(T.glue / bagWeight) : 0;
+    var totalBags = F.bags + W.bags;
 
     out.floorHint.textContent = includeCheck(e.includeFloor)
       ? "Площадь пола: " + fmt(floorArea, 2) + " м² · запас " + reserve + "% → " + fmt(F.areaR, 2) + " м²"
@@ -637,8 +683,11 @@
       ? "Периметр: " + fmt(perimeter, 2) + " м · стены: " + fmt(wallGross, 2) + " м² − проёмы " + fmt(doorArea + winArea, 2) + " м² = " + fmt(wallArea, 2) + " м²"
       : "Стены не учитываются";
     out.glueHint.textContent = manual
-      ? "Расход клея: " + fmt(glueRate, 1) + " кг/м² (вручную)"
-      : "Клей = 1,3 × зубец шпателя " + fmt(trowel, 1) + " мм = " + fmt(glueRate, 1) + " кг/м²";
+      ? "Клей (пол): " + fmt(glueRate, 1) + " кг/м² (вручную)"
+      : "Клей (пол) = 1,3 × зубец " + fmt(trowel, 1) + " мм = " + fmt(glueRate, 1) + " кг/м²";
+    out.wallGlueHint.textContent = wManual
+      ? "Клей (стены): " + fmt(wGlueRate, 1) + " кг/м² (вручную)"
+      : "Клей (стены) = 1,3 × зубец " + fmt(wTrowel, 1) + " мм = " + fmt(wGlueRate, 1) + " кг/м²";
 
     // гидроизоляция / грунтовка
     var hydroCons = num(e.hydroCons);
@@ -710,7 +759,8 @@
     if (includeCheck(e.includeFloor)) room += "Пол: " + fmt(num(e.fL), 2) + "×" + fmt(num(e.fW), 2) + " м";
     if (includeCheck(e.includeFloor) && includeCheck(e.includeWalls)) room += " · ";
     if (includeCheck(e.includeWalls)) room += "Стены: помещение " + fmt(num(e.wL), 2) + "×" + fmt(num(e.wW), 2) + " м, высота " + fmt(num(e.wH), 2) + " м";
-    room += " · Плитка: " + fmt(num(e.tileW), 1) + "×" + fmt(num(e.tileL), 1) + " см, шов " + fmt(R.seam, 1) + " мм";
+    if (includeCheck(e.includeFloor)) room += " · Плитка (пол): " + fmt(num(e.tileW), 1) + "×" + fmt(num(e.tileL), 1) + " см, шов " + fmt(num(e.seam), 1) + " мм";
+    if (includeCheck(e.includeWalls)) room += " · Плитка (стены): " + fmt(num(e.wallTileW), 1) + "×" + fmt(num(e.wallTileL), 1) + " см, шов " + fmt(num(e.wallSeam), 1) + " мм";
 
     var kpis =
       '<div class="kpis">' +
@@ -795,11 +845,11 @@
   }
 
   // ==== мастер шагов ====
-  var LIMIT = 7; // 6 шагов ввода + лист
+  var LIMIT = 8; // 7 шагов ввода + лист
   var cur = 0;
   var stepsHost = $("steps");
   var pages = Array.prototype.slice.call(document.querySelectorAll(".page"));
-  var stepMeta = ["Клиент", "Пол", "Стены", "Плитка и клей", "Гидро и грунт", "Работы", "Лист расчёта"];
+  var stepMeta = ["Клиент", "Пол", "Стены", "Плитка пола", "Плитка стен", "Гидро и грунт", "Работы", "Лист расчёта"];
 
   function buildIndicator() {
     stepsHost.innerHTML = "";
