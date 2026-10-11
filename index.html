@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TILER / ПЛИТОЧНИК — калькулятор плитки и работ</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b1120">
+<meta name="description" content="Пошаговый калькулятор плитки, клея, СВП, гидроизоляции, грунтовки и стоимости работ. Работает офлайн.">
+<!-- iOS / Safari -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TILER">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+<style>
+  :root {
+    --bg: #0b1120;
+    --card: #1e293b;
+    --card2: #273449;
+    --accent: #38bdf8;
+    --accent2: #22c55e;
+    --gold: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --border: #334155;
+    /* лист (бумага) */
+    --paper: #ffffff;
+    --paper-soft: #f4f7fb;
+    --ink: #0f172a;
+    --ink-soft: #475569;
+    --paper-line: #e2e8f0;
+    --paper-accent: #0ea5e9;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    padding: 0 12px 56px;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    background: radial-gradient(circle at 50% -10%, #1e293b, #0b1120 62%);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ==== шапка ==== */
+  .app-header { max-width: 720px; margin: 26px auto 0; text-align: center; }
+  .brand { font-size: 1.55rem; font-weight: 800; letter-spacing: 2px; color: #fff; }
+  .brand .t { color: var(--accent); }
+  .brand small { display: block; font-size: .68rem; font-weight: 500; letter-spacing: 4px; color: var(--gold); margin-top: 2px; }
+  .app-sub { color: var(--muted); font-size: .82rem; margin-top: 6px; }
+
+  /* ==== индикатор шагов ==== */
+  .steps { display: flex; justify-content: center; gap: 6px; margin: 22px auto 4px; max-width: 720px; flex-wrap: wrap; }
+  .step-dot {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 12px; border-radius: 999px;
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); font-size: .74rem; cursor: pointer;
+    transition: all .25s ease; user-select: none;
+  }
+  .step-dot .n {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--card2); font-weight: 700; font-size: .72rem;
+    transition: all .25s ease;
+  }
+  .step-dot.done { border-color: rgba(56,189,248,.5); }
+  .step-dot.done .n { background: var(--accent); color: #062c3b; }
+  .step-dot.active { border-color: var(--accent2); color: var(--text); box-shadow: 0 0 0 4px rgba(34,197,94,.15); }
+  .step-dot.active .n { background: var(--accent2); color: #052918; }
+  @media (max-width: 560px) { .step-dot span.lbl { display: none; } }
+
+  /* ==== контейнер ==== */
+  .wrap { max-width: 720px; margin: 0 auto; position: relative; }
+
+  /* ==== страницы-шаги ==== */
+  .page { display: none; }
+  .page.active {
+    display: block;
+    opacity: 1;
+    animation: stepIn .45s cubic-bezier(.22,.61,.36,1) both;
+  }
+  .page.out { display: block; animation: stepOut .26s ease forwards; }
+  @keyframes stepIn { from { opacity: 0; transform: translateX(46px); } to { opacity: 1; transform: none; } }
+  @keyframes stepOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(-46px); } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px 22px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.4);
+    margin-bottom: 18px;
+  }
+  .card .step-title { font-size: 1.05rem; font-weight: 700; color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .card .step-num { font-size: .72rem; color: var(--gold); letter-spacing: 2px; font-weight: 600; }
+
+  /* поочерёдное появление полей */
+  .page > .row { opacity: 0; }
+  .page.active > .row { animation: fieldIn .5s both; }
+  .page.active > .row:nth-child(1) { animation-delay: .02s; }
+  .page.active > .row:nth-child(2) { animation-delay: .07s; }
+  .page.active > .row:nth-child(3) { animation-delay: .12s; }
+  .page.active > .row:nth-child(4) { animation-delay: .17s; }
+  .page.active > .row:nth-child(5) { animation-delay: .22s; }
+  .page.active > .row:nth-child(6) { animation-delay: .27s; }
+  @keyframes fieldIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  .field { margin-bottom: 12px; }
+  label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 5px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > .field { flex: 1; margin-bottom: 0; min-width: 110px; }
+  .row + .row { margin-top: 14px; }
+  input, select {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 11px;
+    border: 1px solid var(--border);
+    background: var(--card2);
+    color: var(--text);
+    font-size: .95rem;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(56,189,248,.2); }
+  .hint { font-size: .72rem; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  .sw { display: inline-flex; align-items: center; gap: 7px; font-size: .76rem; color: var(--muted); cursor: pointer; user-select: none; }
+  .sw input { width: 17px; height: 17px; accent-color: var(--accent2); }
+  .sw.active-check { color: var(--accent2); }
+
+  /* ==== навигация ==== */
+  .nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 6px; }
+  .btn {
+    padding: 13px 22px; border-radius: 12px; border: none;
+    font-size: .92rem; font-weight: 700; cursor: pointer;
+    transition: transform .12s, box-shadow .2s, background .2s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-secondary { background: var(--card2); color: var(--text); border: 1px solid var(--border); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #0ea5e9);
+    color: #062c3b; box-shadow: 0 8px 22px rgba(56,189,248,.25);
+  }
+  .btn-green { background: linear-gradient(135deg, var(--accent2), #16a34a); color: #052918; box-shadow: 0 8px 22px rgba(34,197,94,.25); }
+  .btn:disabled { opacity: .4; cursor: default; box-shadow: none; }
+
+  /* ==== зеркало хода ==== */
+  .mini-kpi {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 16px;
+  }
+  @media (max-width: 560px) { .mini-kpi { grid-template-columns: repeat(2, 1fr); } }
+  .mini-kpi .k { background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+  .mini-kpi .k b { display: block; font-size: 1.05rem; color: var(--accent2); }
+  .mini-kpi .k span { font-size: .66rem; color: var(--muted); }
+
+  /* ==== лист (бумага) ==== */
+  .sheet-paper {
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 4px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .sheet-head {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff; padding: 22px 26px;
+    display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .sheet-head .l1 { font-size: 1.35rem; font-weight: 800; letter-spacing: 1.5px; }
+  .sheet-head .l1 i { color: var(--accent); font-style: normal; }
+  .sheet-head .l2 { font-size: .7rem; letter-spacing: 3px; color: var(--gold); margin-top: 3px; }
+  .sheet-head .l3 { font-size: .82rem; color: #cbd5e1; }
+  .sheet-head .stamp { text-align: right; font-size: .72rem; color: #94a3b8; }
+  .sheet-head .stamp b { color: #fff; font-size: .95rem; display: block; }
+  .sheet-body { padding: 20px 26px 26px; }
+  .sheet-object { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: .8rem; color: var(--ink-soft); border-bottom: 1px solid var(--paper-line); padding-bottom: 14px; margin-bottom: 16px; }
+  .sheet-object b { color: var(--ink); }
+  .sheet-title { font-size: 1.05rem; font-weight: 800; color: var(--ink); margin: 0 0 12px; display: flex; align-items: center; gap: 9px; }
+  .sheet-title .no { width: 24px; height: 24px; border-radius: 7px; background: var(--paper-accent); color: #fff; font-size: .78rem; display: inline-flex; align-items: center; justify-content: center; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin: 4px 0 22px; }
+  @media (max-width: 620px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpis .k { background: var(--paper-soft); border: 1px solid var(--paper-line); border-radius: 10px; padding: 10px 12px; }
+  .kpis .k b { display: block; font-size: 1.2rem; color: #0f766e; }
+  .kpis .k span { font-size: .68rem; color: var(--ink-soft); }
+  table.sheet { width: 100%; border-collapse: collapse; font-size: .8rem; margin-bottom: 22px; }
+  table.sheet th, table.sheet td { padding: 9px 10px; border: 1px solid var(--paper-line); }
+  table.sheet thead th { background: var(--paper-soft); color: var(--ink-soft); font-size: .68rem; text-transform: uppercase; letter-spacing: .4px; text-align: left; }
+  table.sheet td.num, table.sheet th.num { text-align: right; white-space: nowrap; }
+  table.sheet tbody tr:nth-child(even) { background: #fafcff; }
+  table.sheet .total-row td { font-weight: 700; background: #f0fdfa; }
+  table.sheet td.grand { color: #0f766e; }
+  .included { color: #0f766e; font-size: .7rem; }
+  .sheet-total {
+    display: flex; justify-content: space-between; align-items: center;
+    background: linear-gradient(135deg, #f0fdfa, #e0f2fe);
+    border: 1px solid #99f6e4; border-radius: 13px; padding: 16px 20px; margin-top: 6px;
+  }
+  .sheet-total .l { font-size: .78rem; color: var(--ink-soft); }
+  .sheet-total .s { font-size: 1.7rem; font-weight: 800; color: #0f766e; }
+  .sheet-note { font-size: .7rem; color: var(--ink-soft); margin-top: 12px; line-height: 1.5; }
+  .signatures { display: flex; justify-content: space-between; gap: 40px; margin-top: 38px; flex-wrap: wrap; }
+  .signatures .sig { flex: 1; min-width: 160px; }
+  .signatures .sig div { border-bottom: 1px solid #94a3b8; height: 34px; margin-bottom: 6px; }
+  .signatures .sig span { font-size: .72rem; color: var(--ink-soft); }
+  .sheet-foot {
+    border-top: 1px solid var(--paper-line); padding: 12px 26px 18px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    font-size: .68rem; color: #94a3b8;
+  }
+  .sheet-foot b { color: var(--ink-soft); letter-spacing: 1px; }
+
+  .footer-note { text-align: center; color: var(--muted); font-size: .7rem; margin-top: 22px; line-height: 1.5; }
+
+  /* ==== шестерёнка ==== */
+  .gear-btn {
+    position: fixed; top: 14px; right: 14px; z-index: 100;
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid var(--border);
+    background: rgba(30,41,59,.85);
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; backdrop-filter: blur(6px);
+    transition: color .2s, border-color .2s, transform .3s;
+  }
+  .gear-btn:hover { color: var(--text); border-color: var(--accent); transform: rotate(40deg); }
+  .gear-btn svg { width: 22px; height: 22px; }
+
+  /* ==== настройки ==== */
+  .overlay {
+    position: fixed; inset: 0; z-index: 1001;
+    background: rgba(5,10,20,.72);
+    display: none; align-items: center; justify-content: center;
+    padding: 16px; backdrop-filter: blur(3px);
+  }
+  .overlay.open { display: flex; }
+  .modal { width: 100%; max-width: 420px; margin: 0; animation: modalIn .28s cubic-bezier(.22,.61,.36,1); }
+  .modal .x { background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 2px 8px; transition: color .2s; }
+  .modal .x:hover { color: var(--text); }
+  .modal-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+
+  /* ==== сплэш ==== */
+  #splash {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+    background: radial-gradient(circle at 50% 35%, #1e293b, #0b1120 75%);
+    color: var(--text); opacity: 1; transition: opacity 1.4s ease;
+  }
+  #splash.hide { opacity: 0; pointer-events: none; }
+  #splash img { width: min(38vmin, 210px); height: min(38vmin, 210px); border-radius: 22px; box-shadow: 0 18px 60px rgba(0,0,0,.55); animation: splashPop .6s ease; }
+  #splash .sn { font-size: 1.1rem; font-weight: 800; letter-spacing: 2px; color: var(--accent); }
+  #splash .ss { font-size: .75rem; color: var(--muted); letter-spacing: 4px; text-transform: uppercase; }
+  @keyframes splashPop { 0% { transform: scale(.85); opacity: .4; } 100% { transform: scale(1); opacity: 1; } }
+
+  /* ==== печать ==== */
+  @media print {
+    @page { size: A4; margin: 9mm; }
+    html, body { background: #fff !important; padding: 0; margin: 0; }
+    .no-print { display: none !important; }
+    .wrap { max-width: 100%; }
+    .page { display: none !important; }
+    .page.print-current { display: block !important; }
+    .sheet-paper { box-shadow: none; border-radius: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="splash" class="no-print">
+  <img src="icons/icon-512.png" alt="TILER / ПЛИТОЧНИК">
+  <div class="sn">TILER / ПЛИТОЧНИК</div>
+  <div class="ss">BELYAEV_PROJECT</div>
+</div>
+
+<button id="gearBtn" class="gear-btn no-print" aria-label="Настройки" title="Настройки">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a1.94 1.94 0 1 1-2.74 2.74l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-.97 1.47V21a1.94 1.94 0 1 1-3.88 0v-.09a1.6 1.6 0 0 0-1.08-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06a1.94 1.94 0 1 1-2.74-2.74l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-.97H3a1.94 1.94 0 1 1 0-3.88h.09a1.6 1.6 0 0 0 1.47-1.08 1.6 1.6 0 0 0-.32-1.77l-.06-.06a1.94 1.94 0 1 1 2.74-2.74l.06.06a1.6 1.6 0 0 0 1.77.32h.09a1.6 1.6 0 0 0 .97-1.47V3a1.94 1.94 0 1 1 3.88 0v.09a1.6 1.6 0 0 0 .97 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a1.94 1.94 0 1 1 2.74 2.74l-.06.06a1.6 1.6 0 0 0-.32 1.77v.09a1.6 1.6 0 0 0 1.47.97H21a1.94 1.94 0 1 1 0 3.88h-.09a1.6 1.6 0 0 0-1.47.97z"/></svg>
+</button>
+
+<div class="no-print">
+  <header class="app-header">
+    <div class="brand"><span class="t">TILER</span> / ПЛИТОЧНИК<small>BELYAEV_PROJECT</small></div>
+    <div class="app-sub">Пошаговый расчёт материалов и стоимости работ</div>
+    <nav class="steps" id="steps" aria-label="Шаги"></nav>
+  </header>
+</div>
+
+<main class="wrap">
+
+  <!-- ============ ШАГ 1. ДАННЫЕ КЛИЕНТА ============ -->
+  <section class="page" id="p0" data-step="0">
+    <div class="card">
+      <div class="step-title">Данные клиента <span class="step-num">ШАГ 1 ИЗ 7</span></div>
+      <div class="row">
+        <div class="field"><label>ФИО заказчика</label><input type="text" id="clientFio" placeholder="Иванов Иван Иванович"></div>
+        <div class="field"><label>Телефон</label><input type="tel" id="clientPhone" placeholder="+7 (900) 000-00-00"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Адрес объекта</label><input type="text" id="clientAddress" placeholder="г. Город, ул. Улица, д. 1, кв. 2"></div>
+      </div>
+      <div class="row"><div class="field"><span class="hint">Данные появятся на листе расчёта. Свои имя и телефон (исполнителя) укажите в настройках — кнопка с шестерёнкой в правом верхнем углу.</span></div></div>
+    </div>
+  </section>
+
+  <!-- ============ ШАГ 2. ПОЛ ============ -->
+  <section class="page" id="p1" data-step="1">
+    <div class="card">
+      <div class="step-title">Размеры по полу <span class="step-num" id="stepLabel1">ШАГ 2 ИЗ 7</span></div>
+      <div class="row">
+        <div class="field" style="flex:100%">
+          <label class="sw" for="includeFloor" id="swFloor"><input type="checkbox" id="includeFloor" checked> Плитка на полу учитывается в расчёте</label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Длина пола, м</label><input type="number" id="fL" value="3" min="0" step="0.01"></div>
+        <div class="field"><label>Ширина пола, м</label><input type="number" id="fW" value="2" min="0" step="0.01"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Запас на подрезку, %</label><input type="number" id="reserve" value="10" min="0" step="1"></div>
+        <div class="field"><span class="hint" id="floorHint" style="margin-top:24px"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ШАГ 3. СТЕНЫ ============ -->
+  <section class="page" id="p2" data-step="2">
+    <div class="card">
+      <div class="step-title">Стены и проёмы <span class="step-num">ШАГ 3 ИЗ 7</span></div>
+      <div class="row">
+        <div class="field" style="flex:100%">
+          <label class="sw" for="includeWalls"><input type="checkbox" id="includeWalls" checked> Плитка на стенах учитывается в расчёте</label>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Длина помещения, м</label><input type="number" id="wL" value="3" min="0" step="0.01"></div>
+        <div class="field"><label>Ширина помещения, м</label><input type="number" id="wW" value="2" min="0" step="0.01"></div>
+        <div class="field"><label>Высота стен, м</label><input type="number" id="wH" value="2.7" min="0" step="0.01"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Дверей, шт</label><input type="number" id="doorCount" value="1" min="0" step="1"></div>
+        <div class="field"><label>Дверь: ширина, м</label><input type="number" id="doorW" value="0.9" min="0" step="0.01"></div>
+        <div class="field"><label>Дверь: высота, м</label><input type="number" id="doorH" value="2.1" min="0" step="0.01"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Окон, шт</label><input type="number" id="winCount" value="1" min="0" step="1"></div>
+        <div class="field"><label>Окно: ширина, м</label><input type="number" id="winW" value="1.5" min="0" step="0.01"></div>
+        <div class="field"><label>Окно: высота, м</label><input type="number" id="winH" value="1.4" min="0" step="0.01"></div>
+      </div>
+      <div class="row"><div class="field"><span class="hint" id="wallHint"></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============ ШАГ 4. ПЛИТКА И КЛЕЙ ============ -->
+  <section class="page" id="p3" data-step="3">
+    <div class="card">
+      <div class="step-title">Плитка, швы и клей <span class="step-num">ШАГ 4 ИЗ 7</span></div>
+      <div class="row">
+        <div class="field"><label>Ширина плитки, см</label><input type="number" id="tileW" value="60" min="1" step="0.1"></div>
+        <div class="field"><label>Длина плитки, см</label><input type="number" id="tileL" value="60" min="1" step="0.1"></div>
+        <div class="field"><label>Толщина, мм</label><input type="number" id="tileThk" value="9" min="1" step="0.1"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Шов между плитками, мм</label><input type="number" id="seam" value="1.5" min="0" step="0.1"></div>
+        <div class="field"><label>СВП, шт/м²</label><input type="number" id="svpRate" value="6" min="0" step="1"></div>
+        <div class="field"><label>Расход клея</label>
+          <select id="glueMode">
+            <option value="trowel">По зубцу шпателя</option>
+            <option value="manual">Вручную, кг/м²</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field" id="trowelWrap"><label>Зубец шпателя, мм</label><input type="number" id="trowel" value="10" min="1" step="0.5"></div>
+        <div class="field" id="glueManualWrap" style="display:none"><label>Клей, кг/м²</label><input type="number" id="glueManual" value="6" min="0" step="0.1"></div>
+        <div class="field"><label>Мешок клея, кг</label><input type="number" id="bagWeight" value="25" min="1" step="1"></div>
+      </div>
+      <div class="row"><div class="field"><span class="hint" id="glueHint"></span></div></div>
+    </div>
+  </section>
+
+  <!-- ============ ШАГ 5. ГИДРОИЗОЛЯЦИЯ И ГРУНТОВКА ============ -->
+  <section class="page" id="p4" data-step="4">
+    <div class="card">
+      <div class="step-title">Гидроизоляция и грунтовка <span class="step-num">ШАГ 5 ИЗ 7</span></div>
+      <div class="row">
+        <div class="field"><label>Гидроизоляция, ₽/м²</label><input type="number" id="hydroPrice" value="500" min="0" step="50"></div>
+        <div class="field"><label>Грунтовка, ₽/м²</label><input type="number" id="primerPrice" value="300" min="0" step="50"></div>
+        <div class="field"><label>Расход мастики, кг/м²·слой</label><input type="number" id="hydroCons" value="1.3" min="0" step="0.1"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Ведро мастики, кг</label><input type="number" id="hydroBucket" value="20" min="1" step="1"></div>
+        <div class="field"><label>Расход грунтовки, л/м²·слой</label><input type="number" id="primerCons" value="0.2" min="0" step="0.05"></div>
+        <div class="field"><label>Канистра грунтовки, л</label><input type="number" id="primerCan" value="5" min="1" step="1"></div>
+      </div>
+      <div class="row"><div class="field"><span class="hint">Гидроизоляция — по всей площади укладки (пол + стены), 2 слоя. Лента — по периметру пола и вертикальным углам. Грунтовка — 2 слоя по всей площади укладки.</span></div></div>
+    </div>
+  </section>
+
+  <!-- ============ ШАГ 6. РАБОТЫ И ИЗДЕЛИЯ ============ -->
+  <section class="page" id="p5" data-step="5">
+    <div class="card">
+      <div class="step-title">Работы и изделия <span class="step-num">ШАГ 6 ИЗ 7</span></div>
+      <div class="row">
+        <div class="field"><label>Укладка плитки, ₽/м²</label><input type="number" id="priceTile" value="3500" min="0" step="50"></div>
+        <div class="field"><label>Затирка швов</label>
+          <select id="groutType">
+            <option value="cement">Цементная — входит в укладку</option>
+            <option value="epoxy">Эпоксидная — отдельно</option>
+          </select>
+        </div>
+        <div class="field"><label>Эпоксидная, ₽/п.м</label><input type="number" id="epoxyPrice" value="500" min="0" step="50"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Запилы 45°, п.м</label><input type="number" id="miterLm" value="0" min="0" step="0.1"></div>
+        <div class="field"><label>Запилы, ₽/п.м</label><input type="number" id="miterPrice" value="3500" min="0" step="50"></div>
+        <div class="field"><label>Отверстия, шт</label><input type="number" id="holesQty" value="0" min="0" step="1"></div>
+        <div class="field"><label>Отверстия, ₽/шт</label><input type="number" id="holesPrice" value="350" min="0" step="50"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Изготовление полок, шт</label><input type="number" id="shelfQty" value="0" min="0" step="1"></div>
+        <div class="field"><label>Полки, ₽/шт</label><input type="number" id="shelfPrice" value="10000" min="0" step="500"></div>
+        <div class="field"><label>Откосы, п.м</label><input type="number" id="slopeLm" value="0" min="0" step="0.1"></div>
+        <div class="field"><label>Откосы, ₽/п.м</label><input type="number" id="slopePrice" value="3500" min="0" step="50"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Экран для ванной, шт</label><input type="number" id="screenQty" value="0" min="0" step="1"></div>
+        <div class="field"><label>Экран, ₽/шт</label><input type="number" id="screenPrice" value="15000" min="0" step="500"></div>
+        <div class="field"><label>Врезка лючков, шт</label><input type="number" id="hatchQty" value="0" min="0" step="1"></div>
+        <div class="field"><label>Лючок, ₽/шт</label><input type="number" id="hatchPrice" value="5000" min="0" step="500"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Душевой поддон, шт</label><input type="number" id="trayQty" value="0" min="0" step="1"></div>
+        <div class="field"><label>Поддон, ₽/шт</label><input type="number" id="trayPrice" value="25000" min="0" step="500"></div>
+        <div class="field"><label>Установка трапика, шт</label><input type="number" id="trapQty" value="0" min="0" step="1"></div>
+        <div class="field"><label>Трапик, ₽/шт</label><input type="number" id="trapPrice" value="4500" min="0" step="500"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ШАГ 7. ИТОГОВЫЙ ЛИСТ ============ -->
+  <section class="page" id="p6" data-step="6">
+    <div class="sheet-paper" id="sheetPaper">
+      <div class="sheet-head">
+        <div>
+          <div class="l1"><i>TILER</i> / ПЛИТОЧНИК</div>
+          <div class="l2">BELYAEV_PROJECT</div>
+        </div>
+        <div>
+          <div class="l3">Спецификация материалов и работ</div>
+          <div class="l3">по укладке плитки</div>
+        </div>
+        <div class="stamp">Сформирован<br><b id="sheetDate"></b></div>
+      </div>
+      <div class="sheet-body" id="sheetBody"></div>
+      <div class="sheet-foot">
+        <span><b>TILER · ПЛИТОЧНИК</b> — смета носит справочный характер</span>
+        <span id="sheetContact">тел.: ____________ · e-mail: ____________</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==== навигация ==== -->
+  <div class="nav no-print">
+    <button class="btn btn-secondary" id="prevBtn">← Назад</button>
+    <button class="btn btn-primary" id="nextBtn">Далее →</button>
+  </div>
+
+  <div class="footer-note no-print">Расчёт носит справочный характер. Фактический расход зависит от основания, геометрии плитки и толщины слоя клея.</div>
+</main>
+
+<!-- ==== настройки ==== -->
+<div id="settingsOverlay" class="overlay no-print">
+  <div class="modal card">
+    <div class="step-title" style="justify-content:space-between">
+      <span>Настройки</span>
+      <button id="settingsClose" class="x" aria-label="Закрыть">×</button>
+    </div>
+    <p class="hint" style="margin-top:12px">Ваши данные автоматически подставляются в лист расчёта: имя — в подпись «Исполнитель», телефон — в контакты внизу документа.</p>
+    <div class="field" style="margin-top:14px"><label>Ваше имя / организация</label><input type="text" id="myName" placeholder="Например: Беляев Александр"></div>
+    <div class="field"><label>Ваш телефон</label><input type="tel" id="myPhone" placeholder="+7 (900) 000-00-00"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" id="settingsClose2">Закрыть</button>
+      <button class="btn btn-primary" id="settingsSave">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- автосохранение ----
+(function () {
+  var KEY = "belyaev-tiler-v2";
+  var PERSIST = [
+    "clientFio","clientAddress","clientPhone",
+    "includeFloor","fL","fW","reserve",
+    "includeWalls","wL","wW","wH",
+    "doorCount","doorW","doorH","winCount","winW","winH",
+    "tileW","tileL","tileThk","seam","svpRate",
+    "glueMode","trowel","glueManual","bagWeight",
+    "hydroPrice","primerPrice","hydroCons","hydroBucket","primerCons","primerCan",
+    "priceTile","groutType","epoxyPrice","miterLm","miterPrice",
+    "holesQty","holesPrice","shelfQty","shelfPrice","slopeLm","slopePrice",
+    "screenQty","screenPrice","hatchQty","hatchPrice","trayQty","trayPrice","trapQty","trapPrice",
+    "myName","myPhone"
+  ];
+  function load() {
+    try {
+      var o = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (!o) return;
+      PERSIST.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el || o[id] === undefined) return;
+        if (el.type === "checkbox") el.checked = !!o[id];
+        else el.value = o[id];
+      });
+    } catch (e) {}
+  }
+  function save() {
+    var o = {};
+    PERSIST.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      o[id] = el.type === "checkbox" ? el.checked : el.value;
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {}
+  }
+  load();
+  document.addEventListener("input", save);
+  document.addEventListener("change", save);
+})();
+</script>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var num = function (el, def) {
+    var v = parseFloat(String(el.value).replace(",", "."));
+    return isFinite(v) ? v : (def || 0);
+  };
+  var fmt = function (n, d) {
+    d = d === undefined ? 2 : d;
+    if (!isFinite(n)) n = 0;
+    return n.toLocaleString("ru-RU", { minimumFractionDigits: d, maximumFractionDigits: d });
+  };
+  var money = function (n) { return fmt(Math.round(n), 0) + " ₽"; };
+  var str = function (el) { return String(el.value || "").trim(); };
+
+  var fields = [
+    "clientFio","clientAddress","clientPhone",
+    "includeFloor","fL","fW","reserve",
+    "includeWalls","wL","wW","wH",
+    "doorCount","doorW","doorH","winCount","winW","winH",
+    "tileW","tileL","tileThk","seam","svpRate",
+    "glueMode","trowel","glueManual","bagWeight",
+    "hydroPrice","primerPrice","hydroCons","hydroBucket","primerCons","primerCan",
+    "priceTile","groutType","epoxyPrice","miterLm","miterPrice",
+    "holesQty","holesPrice","shelfQty","shelfPrice","slopeLm","slopePrice",
+    "screenQty","screenPrice","hatchQty","hatchPrice","trayQty","trayPrice","trapQty","trapPrice",
+    "myName","myPhone"
+  ];
+  var els = {};
+  fields.forEach(function (id) { els[id] = $(id); });
+
+  var out = {
+    floorHint: $("floorHint"), wallHint: $("wallHint"), glueHint: $("glueHint"),
+    glueManualWrap: $("glueManualWrap"), trowelWrap: $("trowelWrap"),
+    sheetBody: $("sheetBody"), sheetDate: $("sheetDate")
+  };
+
+  function adhesiveRate(trowel) { return 1.3 * trowel; }
+  function jointLength(area, tw, tl) {
+    var a = tl / 100, b = tw / 100;
+    if (area <= 0 || a <= 0 || b <= 0) return 0;
+    return area * (1 / a + 1 / b);
+  }
+  function groutMass(area, tw, tl, seamMm, thkMm) {
+    return jointLength(area, tw, tl) * (seamMm / 1000) * (thkMm / 1000) * 1600;
+  }
+
+  function calc() {
+    var e = els;
+
+    var floorArea = e.includeFloor.checked ? num(e.fL) * num(e.fW) : 0;
+    var perimeter = 2 * (num(e.wL) + num(e.wW));
+    var wallGross = e.includeWalls.checked ? perimeter * num(e.wH) : 0;
+    var doorArea = e.includeWalls.checked ? num(e.doorCount) * num(e.doorW) * num(e.doorH) : 0;
+    var winArea = e.includeWalls.checked ? num(e.winCount) * num(e.winW) * num(e.winH) : 0;
+    var wallArea = Math.max(0, wallGross - doorArea - winArea);
+
+    var tileW = num(e.tileW), tileL = num(e.tileL), thk = num(e.tileThk);
+    var seam = num(e.seam), reserve = num(e.reserve), svpRate = Math.round(num(e.svpRate));
+    var bagWeight = num(e.bagWeight, 25) || 25;
+    var tileArea = (tileW / 100) * (tileL / 100);
+    var coef = 1 + reserve / 100;
+
+    var trowel = num(e.trowel);
+    var manual = e.glueMode.value === "manual";
+    out.glueManualWrap.style.display = manual ? "block" : "none";
+    out.trowelWrap.style.display = manual ? "none" : "block";
+    var glueRate = manual ? num(e.glueManual) : adhesiveRate(trowel);
+
+    function surface(area) {
+      var areaR = area * coef;
+      return {
+        area: area,
+        areaR: areaR,
+        tiles: tileArea > 0 ? Math.ceil(areaR / tileArea) : 0,
+        glue: areaR * glueRate,
+        svp: Math.ceil(areaR * svpRate),
+        jl: jointLength(area, tileW, tileL),
+        grout: groutMass(area, tileW, tileL, seam, thk)
+      };
+    }
+    var F = surface(floorArea);
+    var W = surface(wallArea);
+    var T = {
+      area: F.area + W.area,
+      areaR: F.areaR + W.areaR,
+      tiles: F.tiles + W.tiles,
+      glue: F.glue + W.glue,
+      svp: F.svp + W.svp,
+      jl: F.jl + W.jl,
+      grout: F.grout + W.grout
+    };
+    var totalBags = bagWeight > 0 ? Math.ceil(T.glue / bagWeight) : 0;
+
+    out.floorHint.textContent = includeCheck(e.includeFloor)
+      ? "Площадь пола: " + fmt(floorArea, 2) + " м² · запас " + reserve + "% → " + fmt(F.areaR, 2) + " м²"
+      : "Пол не учитывается";
+    out.wallHint.textContent = includeCheck(e.includeWalls)
+      ? "Периметр: " + fmt(perimeter, 2) + " м · стены: " + fmt(wallGross, 2) + " м² − проёмы " + fmt(doorArea + winArea, 2) + " м² = " + fmt(wallArea, 2) + " м²"
+      : "Стены не учитываются";
+    out.glueHint.textContent = manual
+      ? "Расход клея: " + fmt(glueRate, 1) + " кг/м² (вручную)"
+      : "Клей = 1,3 × зубец шпателя " + fmt(trowel, 1) + " мм = " + fmt(glueRate, 1) + " кг/м²";
+
+    // гидроизоляция / грунтовка
+    var hydroCons = num(e.hydroCons);
+    var hydroBucket = num(e.hydroBucket, 20) || 20;
+    var primerCons = num(e.primerCons);
+    var primerCan = num(e.primerCan, 5) || 5;
+    var hydroArea = T.area;
+    var hydroKg = hydroArea * 2 * hydroCons;
+    var hydroPacks = hydroBucket > 0 ? Math.ceil(hydroKg / hydroBucket) : 0;
+    var tapeLen = hydroArea > 0 ? perimeter + (includeCheck(e.includeWalls) ? 4 * num(e.wH) : 0) : 0;
+    var primerArea = T.area;
+    var primerL = primerArea * 2 * primerCons;
+    var primerPacks = primerCan > 0 ? Math.ceil(primerL / primerCan) : 0;
+
+    // работы
+    var priceTile = num(e.priceTile);
+    var isEpoxy = e.groutType.value === "epoxy";
+    var epoxyPrice = num(e.epoxyPrice);
+    var laying = T.area * priceTile;
+    var epoxyCost = isEpoxy ? T.jl * epoxyPrice : 0;
+    var works = [
+      { name: "Укладка плитки", q: fmt(T.area, 2) + " м²", price: fmt(priceTile, 0) + " ₽/м²", sum: laying },
+      isEpoxy
+        ? { name: "Затирка швов (эпоксидная)", q: fmt(T.jl, 2) + " п.м", price: fmt(epoxyPrice, 0) + " ₽/п.м", sum: epoxyCost }
+        : { name: "Затирка швов (цементная)", q: "", price: "", sum: 0, note: "Входит в стоимость укладки" },
+      { name: "Запилы под 45°", q: fmt(num(e.miterLm), 1) + " п.м", price: fmt(num(e.miterPrice), 0) + " ₽/п.м", sum: num(e.miterLm) * num(e.miterPrice) },
+      { name: "Прорезка отверстий", q: fmt(num(e.holesQty), 0) + " шт", price: fmt(num(e.holesPrice), 0) + " ₽/шт", sum: num(e.holesQty) * num(e.holesPrice) },
+      { name: "Изготовление полок", q: fmt(num(e.shelfQty), 0) + " шт", price: fmt(num(e.shelfPrice), 0) + " ₽/шт", sum: num(e.shelfQty) * num(e.shelfPrice) },
+      { name: "Откосы", q: fmt(num(e.slopeLm), 1) + " п.м", price: fmt(num(e.slopePrice), 0) + " ₽/п.м", sum: num(e.slopeLm) * num(e.slopePrice) },
+      { name: "Изготовление экрана для ванной", q: fmt(num(e.screenQty), 0) + " шт", price: fmt(num(e.screenPrice), 0) + " ₽/шт", sum: num(e.screenQty) * num(e.screenPrice) },
+      { name: "Врезка лючков скрытого монтажа", q: fmt(num(e.hatchQty), 0) + " шт", price: fmt(num(e.hatchPrice), 0) + " ₽/шт", sum: num(e.hatchQty) * num(e.hatchPrice) },
+      { name: "Изготовление душевого поддона", q: fmt(num(e.trayQty), 0) + " шт", price: fmt(num(e.trayPrice), 0) + " ₽/шт", sum: num(e.trayQty) * num(e.trayPrice) },
+      { name: "Установка душевого трапика", q: fmt(num(e.trapQty), 0) + " шт", price: fmt(num(e.trapPrice), 0) + " ₽/шт", sum: num(e.trapQty) * num(e.trapPrice) },
+      { name: "Гидроизоляция полимерная (2 слоя)", q: fmt(hydroArea, 2) + " м²", price: fmt(num(e.hydroPrice), 0) + " ₽/м²", sum: hydroArea * num(e.hydroPrice) },
+      { name: "Грунтовка (2 слоя)", q: fmt(primerArea, 2) + " м²", price: fmt(num(e.primerPrice), 0) + " ₽/м²", sum: primerArea * num(e.primerPrice) }
+    ];
+
+    var grandTotal = 0;
+    works.forEach(function (w) { grandTotal += w.sum; });
+
+    renderSheet(e, F, W, T, {
+      perimeter: perimeter, wallGross: wallGross, doorArea: doorArea, winArea: winArea,
+      totalBags: totalBags, glueRate: glueRate, svpRate: svpRate, seam: seam, thk: thk, reserve: reserve,
+      hydroArea: hydroArea, hydroKg: hydroKg, hydroPacks: hydroPacks, tapeLen: tapeLen,
+      primerArea: primerArea, primerL: primerL, primerPacks: primerPacks,
+      hydroBucket: hydroBucket, primerCan: primerCan,
+      works: works, grandTotal: grandTotal, isEpoxy: isEpoxy
+    });
+  }
+
+  function includeCheck(el) { return !!el.checked; }
+
+  function renderSheet(e, F, W, T, R) {
+    out.sheetDate.textContent = new Date().toLocaleDateString("ru-RU") + ", " + new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+
+    var cfio = str(e.clientFio), caddr = str(e.clientAddress), cph = str(e.clientPhone);
+    var myNc = str(e.myName), myPh = str(e.myPhone);
+    var clientParts = [];
+    if (cfio) clientParts.push(cfio);
+    if (caddr) clientParts.push(caddr);
+    var clientLine = clientParts.length ? "Заказчик: <b>" + clientParts.join(" · ") + "</b>" : "Заказчик: ________________";
+    var clientSign = "Заказчик" + (cfio ? " — " + cfio : "") + (cph ? (cfio ? ", тел.: " : " — тел.: ") + cph : "");
+    var contactRight = (myNc || myPh)
+      ? (myNc ? myNc : "") + (myNc && myPh ? " · " : "") + (myPh ? myPh : "")
+      : "тел.: ____________ · e-mail: ____________";
+    $("sheetContact").textContent = contactRight;
+
+    var room = "";
+    if (includeCheck(e.includeFloor)) room += "Пол: " + fmt(num(e.fL), 2) + "×" + fmt(num(e.fW), 2) + " м";
+    if (includeCheck(e.includeFloor) && includeCheck(e.includeWalls)) room += " · ";
+    if (includeCheck(e.includeWalls)) room += "Стены: помещение " + fmt(num(e.wL), 2) + "×" + fmt(num(e.wW), 2) + " м, высота " + fmt(num(e.wH), 2) + " м";
+    room += " · Плитка: " + fmt(num(e.tileW), 1) + "×" + fmt(num(e.tileL), 1) + " см, шов " + fmt(R.seam, 1) + " мм";
+
+    var kpis =
+      '<div class="kpis">' +
+      '<div class="k"><b>' + fmt(T.area, 2) + '</b><span>м² / площадь укладки</span></div>' +
+      '<div class="k"><b>' + fmt(T.tiles, 0) + '</b><span>шт / плитка</span></div>' +
+      '<div class="k"><b>' + fmt(T.glue, 1) + '</b><span>кг / клей (' + R.totalBags + ' меш.)</span></div>' +
+      '<div class="k"><b>' + fmt(T.svp, 0) + '</b><span>шт / СВП</span></div>' +
+      '<div class="k"><b>' + fmt(T.jl, 2) + '</b><span>п.м / длина швов</span></div>' +
+      '<div class="k"><b>' + fmt(T.grout, 2) + '</b><span>кг / затирка</span></div>' +
+      '<div class="k"><b>' + fmt(R.hydroArea, 2) + '</b><span>м² / гидроизоляция</span></div>' +
+      '<div class="k"><b>' + fmt(R.primerL, 1) + '</b><span>л / грунтовка</span></div>' +
+      '</div>';
+
+    var matRows = [
+      ["Площадь укладки, м²", F.area, W.area, T.area, 2],
+      ["Площадь с запасом, м²", F.areaR, W.areaR, T.areaR, 2],
+      ["Плитка, шт", F.tiles, W.tiles, T.tiles, 0],
+      ["Клей, кг", F.glue, W.glue, T.glue, 1],
+      ["СВП, шт", F.svp, W.svp, T.svp, 0],
+      ["Длина швов, п.м", F.jl, W.jl, T.jl, 2],
+      ["Затирка, кг", F.grout, W.grout, T.grout, 2]
+    ];
+    var matTable =
+      '<h3 class="sheet-title"><span class="no">1</span>Материалы</h3>' +
+      '<table class="sheet"><thead><tr><th>Показатель</th><th class="num">Пол</th><th class="num">Стены</th><th class="num">Итого</th></tr></thead><tbody>' +
+      matRows.map(function (r) {
+        return '<tr><td>' + r[0] + '</td><td class="num">' + fmt(r[1], r[4]) + '</td><td class="num">' + fmt(r[2], r[4]) + '</td><td class="num grand"><b>' + fmt(r[3], r[4]) + '</b></td></tr>';
+      }).join("") +
+      '</tbody></table>';
+
+    var prepRows = [
+      ["Гидроизоляция (пол + стены), м²", R.hydroArea, 2],
+      ["Мастика полимерная, кг (2 слоя)", R.hydroKg, 1, "вёдер по " + fmt(R.hydroBucket, 0) + " кг: " + R.hydroPacks],
+      ["Гидроизоляционная лента, п.м", R.tapeLen, 1],
+      ["Грунтовка (пол + стены), м²", R.primerArea, 2],
+      ["Грунтовка, л (2 слоя)", R.primerL, 1, "канистр по " + fmt(R.primerCan, 0) + " л: " + R.primerPacks]
+    ];
+    var prepTable =
+      '<h3 class="sheet-title"><span class="no">2</span>Гидроизоляция и грунтовка</h3>' +
+      '<table class="sheet"><thead><tr><th>Показатель</th><th class="num">Количество</th></tr></thead><tbody>' +
+      prepRows.map(function (r) {
+        return '<tr><td>' + r[0] + (r[3] ? ' <span class="included">(' + r[3] + ')</span>' : '') + '</td><td class="num grand"><b>' + fmt(r[1], r[2]) + '</b></td></tr>';
+      }).join("") +
+      '</tbody></table>';
+
+    var worksVisible = R.works.filter(function (w) { return w.sum > 0 || w.note; });
+    var rows = worksVisible.map(function (w, i) {
+      return '<tr>' +
+        '<td>' + (i + 1) + '</td>' +
+        '<td>' + w.name + (w.note ? ' <span class="included">' + w.note + '</span>' : '') + '</td>' +
+        '<td class="num">' + w.q + '</td>' +
+        '<td class="num">' + w.price + '</td>' +
+        '<td class="num grand"><b>' + money(w.sum) + '</b></td>' +
+        '</tr>';
+    }).join("");
+    var worksTable =
+      '<h3 class="sheet-title"><span class="no">3</span>Работы</h3>' +
+      '<table class="sheet"><thead><tr><th>№</th><th>Наименование</th><th class="num">Объём</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead><tbody>' +
+      rows +
+      '</tbody></table>';
+
+    var totalBlock =
+      '<div class="sheet-total">' +
+      '<div class="l">ИТОГО К ОПЛАТЕ<br><span style="font-size:.68rem;color:#94a3b8">материалы оплачиваются отдельно по счёту</span></div>' +
+      '<div class="s">' + money(R.grandTotal) + '</div>' +
+      '</div>' +
+      '<p class="sheet-note">Стоимость материалов (плитка, клей, СВП, затирка, мастика, грунтовка) в сумму работ не входит — в листе «Спецификация материалов и работ» указаны их количества. Цементная затирка включена в стоимость укладки' + (R.isEpoxy ? ' (затирка эпоксидная оплачивается дополнительно по метражу швов)' : '.') + '</p>';
+
+    var sig =
+      '<div class="signatures">' +
+      '<div class="sig"><div></div><span>Исполнитель' + (myNc ? ' — ' + myNc : ' (TILER)') + '</span></div>' +
+      '<div class="sig"><div></div><span>' + clientSign + '</span></div>' +
+      '</div>';
+
+    out.sheetBody.innerHTML =
+      '<div class="sheet-object">' +
+      '<span style="flex:100%">' + clientLine + '</span>' +
+      '<span>Объект: <b>' + room + '</b></span>' +
+      '<span>Запас на подрезку: <b>' + fmt(R.reserve, 0) + '%</b></span>' +
+      '</div>' +
+      kpis + matTable + prepTable + worksTable + totalBlock + sig;
+  }
+
+  // ==== мастер шагов ====
+  var LIMIT = 7; // 6 шагов ввода + лист
+  var cur = 0;
+  var stepsHost = $("steps");
+  var pages = Array.prototype.slice.call(document.querySelectorAll(".page"));
+  var stepMeta = ["Клиент", "Пол", "Стены", "Плитка и клей", "Гидро и грунт", "Работы", "Лист расчёта"];
+
+  function buildIndicator() {
+    stepsHost.innerHTML = "";
+    stepMeta.forEach(function (lbl, i) {
+      var d = document.createElement("div");
+      d.className = "step-dot";
+      d.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="lbl">' + lbl + '</span>';
+      d.addEventListener("click", function () { goTo(i, true); });
+      d.setAttribute("data-i", i);
+      stepsHost.appendChild(d);
+    });
+  }
+  function updateIndicator() {
+    var dots = stepsHost.children;
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].classList.toggle("done", i < cur);
+      dots[i].classList.toggle("active", i === cur);
+    }
+  }
+  function updateNav() {
+    $("prevBtn").style.visibility = cur === 0 ? "hidden" : "visible";
+    var next = $("nextBtn");
+    if (cur === LIMIT - 1) {
+      next.textContent = "Печать / PDF";
+      next.className = "btn btn-green";
+      next.onclick = function () {
+        pages.forEach(function (p, i) { p.classList.toggle("print-current", i === cur); });
+        window.print();
+      };
+    } else {
+      next.textContent = "Далее →";
+      next.className = "btn btn-primary";
+      next.onclick = function () { goTo(cur + 1, false); };
+    }
+  }
+  function goTo(target, fromIndicator) {
+    if (target === cur) return;
+    if (!fromIndicator) { /* обычная навигация проигрывает переход */ }
+    var from = pages[cur], to = pages[target];
+    from.classList.add("out");
+    setTimeout(function () {
+      from.classList.remove("active", "out");
+      to.classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 240);
+    cur = target;
+    updateIndicator();
+    updateNav();
+    if (cur === LIMIT - 1 || cur === 1) calc();
+  }
+
+  $("prevBtn").addEventListener("click", function () { if (cur > 0) goTo(cur - 1, false); });
+
+  fields.forEach(function (id) {
+    els[id].addEventListener("input", calc);
+    els[id].addEventListener("change", calc);
+  });
+
+  // ==== настройки (шестерёнка) ====
+  var overlay = $("settingsOverlay");
+  function closeSettings() { overlay.classList.remove("open"); }
+  $("gearBtn").addEventListener("click", function () { overlay.classList.add("open"); });
+  $("settingsClose").addEventListener("click", closeSettings);
+  $("settingsClose2").addEventListener("click", closeSettings);
+  $("settingsSave").addEventListener("click", function () { closeSettings(); calc(); });
+  overlay.addEventListener("click", function (ev) { if (ev.target === overlay) closeSettings(); });
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") closeSettings(); });
+
+  buildIndicator();
+  pages[0].classList.add("active");
+  updateIndicator();
+  updateNav();
+  calc();
+})();
+</script>
+
+<script>
+// ---- загрузочный экран и service worker ----
+(function () {
+  var HIDE_KEY = "tiler-v2-splash";
+  var showSplash = sessionStorage.getItem(HIDE_KEY) !== "hide";
+  if (showSplash) {
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        var s = document.getElementById("splash");
+        if (!s) return;
+        s.classList.add("hide");
+        setTimeout(function () { s.style.display = "none"; }, 1400);
+        try { sessionStorage.setItem(HIDE_KEY, "hide"); } catch (e) {}
+      }, 5000);
+    });
+  } else {
+    document.addEventListener("DOMContentLoaded", function () {
+      var s = document.getElementById("splash");
+      if (s) s.style.display = "none";
+    });
+  }
+})();
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
